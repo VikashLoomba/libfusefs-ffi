@@ -1,0 +1,25 @@
+[package]
+name = "libfusefs-ffi"
+version = "0.1.0"
+edition = "2021"
+description = "Node.js N-API bindings for sandboxed agent workspaces backed by libfuse-fs"
+license = "MIT"
+build = "build.rs"
+
+[lib]
+crate-type = ["cdylib"]
+path = "native/src/lib.rs"
+
+[dependencies]
+libc = "0.2"
+libfuse-fs = "0.1.12"
+napi = { version = "3", features = ["async", "napi8"] }
+napi-derive = "3"
+once_cell = "1.21"
+rfuse3 = { version = "0.0.7", features = ["tokio-runtime", "unprivileged", "file-lock"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "sync", "time"] }
+uuid = { version = "1", features = ["v4"] }
+async-notify = "=0.3.2"
+
+[build-dependencies]
+napi-build = "2"

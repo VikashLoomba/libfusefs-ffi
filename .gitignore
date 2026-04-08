@@ -1,0 +1,11 @@
+dist/
+node_modules/
+index.js
+index.d.ts
+*.node
+artifacts/
+npm/
+target/
+.firecrawl/
+.DS_Store
+npm-debug.log*

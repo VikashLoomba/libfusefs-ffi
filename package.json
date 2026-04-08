@@ -1,0 +1,65 @@
+{
+  "name": "@automatalabs/libfusefs-ffi",
+  "version": "0.1.0",
+  "description": "Thin Node.js wrapper around libfuse-fs overlay workspaces via napi-rs",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VikashLoomba/libfusefs-ffi.git"
+  },
+  "homepage": "https://github.com/VikashLoomba/libfusefs-ffi#readme",
+  "bugs": {
+    "url": "https://github.com/VikashLoomba/libfusefs-ffi/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing.d.ts",
+      "import": "./dist/testing.js",
+      "default": "./dist/testing.js"
+    }
+  },
+  "files": [
+    "dist",
+    "index.js",
+    "index.d.ts"
+  ],
+  "napi": {
+    "binaryName": "libfusefs_ffi",
+    "targets": [
+      "x86_64-apple-darwin",
+      "aarch64-apple-darwin",
+      "x86_64-unknown-linux-gnu",
+      "aarch64-unknown-linux-gnu"
+    ]
+  },
+  "scripts": {
+    "artifacts": "napi artifacts",
+    "create-npm-dirs": "napi create-npm-dirs",
+    "build:native": "napi build --platform --release",
+    "build:ts": "tsc -p tsconfig.json",
+    "build": "npm run build:native && npm run build:ts",
+    "prepublishOnly": "npm run build:native && npm run build:ts && napi prepublish -t npm --no-gh-release",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --import tsx --test tests/**/*.test.ts",
+    "test:unit": "node --import tsx --test tests/workspace.test.ts",
+    "test:integration": "npm run build:native && RUN_FUSE_TESTS=1 node --import tsx --test tests/integration.native.test.ts"
+  },
+  "devDependencies": {
+    "@napi-rs/cli": "^3.0.0",
+    "@types/node": "^22.15.3",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

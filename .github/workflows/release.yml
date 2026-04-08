@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  CI: true
+  RUST_BACKTRACE: 1
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build:native -- --target x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            build: npm run build:native -- --target aarch64-unknown-linux-gnu --use-napi-cross
+          - os: macos-13
+            target: x86_64-apple-darwin
+            build: npm run build:native -- --target x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+            build: npm run build:native -- --target aarch64-apple-darwin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build outputs
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build native binary
+        run: ${{ matrix.build }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: libfusefs_ffi.*.node
+          if-no-files-found: error
+
+  publish:
+    name: Publish npm packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs:
+      - build-binaries
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org/
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build outputs
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify package version matches tag
+        run: |
+          node <<'NODE'
+          const pkg = require('./package.json')
+          const tag = process.env.GITHUB_REF_NAME.replace(/^v/, '')
+          if (pkg.version !== tag) {
+            throw new Error(`package.json version ${pkg.version} does not match tag ${tag}`)
+          }
+          NODE
+
+      - name: Run publish-time checks
+        run: |
+          cargo check
+          npm run typecheck
+          npm run test:unit
+
+      - name: Generate the N-API loader shim
+        run: npm run build:native
+
+      - name: Build TypeScript wrapper
+        run: npm run build:ts
+
+      - name: Create npm package directories
+        run: npm run create-npm-dirs
+
+      - name: Download native artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Attach native artifacts to npm packages
+        run: npm run artifacts
+
+      - name: Review package contents
+        run: npm pack --dry-run
+
+      - name: Publish with npm trusted publishing
+        run: npm publish
