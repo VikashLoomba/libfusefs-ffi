@@ -7,5 +7,6 @@ artifacts/
 npm/
 target/
 .firecrawl/
+.local/
 .DS_Store
 npm-debug.log*

@@ -65,7 +65,7 @@ jobs:
         run: ${{ matrix.build }}
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bindings-${{ matrix.target }}
           path: libfusefs_ffi.*.node
@@ -124,7 +124,7 @@ jobs:
         run: npm run create-npm-dirs
 
       - name: Download native artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
