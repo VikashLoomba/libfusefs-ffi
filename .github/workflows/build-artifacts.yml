@@ -1,0 +1,64 @@
+name: Build Artifacts
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CI: true
+  RUST_BACKTRACE: 1
+
+jobs:
+  build-binaries:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            build: npm run build:native -- --target x86_64-unknown-linux-gnu
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            build: npm run build:native -- --target aarch64-unknown-linux-gnu --use-napi-cross
+          - os: macos-13
+            target: x86_64-apple-darwin
+            build: npm run build:native -- --target x86_64-apple-darwin
+          - os: macos-14
+            target: aarch64-apple-darwin
+            build: npm run build:native -- --target aarch64-apple-darwin
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust build outputs
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build native binary
+        run: ${{ matrix.build }}
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bindings-${{ matrix.target }}
+          path: libfusefs_ffi.*.node
+          if-no-files-found: error
