@@ -1,6 +1,6 @@
 {
   "name": "@automatalabs/libfusefs-ffi",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Thin Node.js wrapper around libfuse-fs overlay workspaces via napi-rs",
   "license": "MIT",
   "repository": {
