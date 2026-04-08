@@ -26,10 +26,10 @@ jobs:
           - os: ubuntu-24.04-arm
             target: aarch64-unknown-linux-gnu
             build: npm run build:native -- --target aarch64-unknown-linux-gnu
-          - os: macos-15-intel
+          - os: macos-26-intel
             target: x86_64-apple-darwin
             build: npm run build:native -- --target x86_64-apple-darwin
-          - os: macos-15-arm64
+          - os: macos-26
             target: aarch64-apple-darwin
             build: npm run build:native -- --target aarch64-apple-darwin
 
